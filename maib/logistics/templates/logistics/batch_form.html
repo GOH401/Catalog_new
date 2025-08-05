@@ -1,0 +1,196 @@
+{% extends 'base.html' %}
+{% block title %}{% if batch %}Редактировать партию{% else %}Создать партию{% endif %}{% endblock %}
+
+{% block content %}
+<style>
+    .batch-form-container {
+        max-width: 540px;
+        margin: 44px auto 0 auto;
+        background: #fff;
+        border-radius: 22px;
+        box-shadow: 0 8px 32px #0002;
+        padding: 34px 34px 28px 34px;
+        min-height: 380px;
+        border: 1.5px solid #eaeaea;
+    }
+    .batch-form-title {
+        font-size: 2em;
+        font-weight: 700;
+        margin-bottom: 26px;
+        color: #222;
+        text-align: left;
+        letter-spacing: .5px;
+    }
+    .batch-form-group {
+        margin-bottom: 18px;
+    }
+    .batch-form-label {
+        font-size: 1.07em;
+        font-weight: 500;
+        margin-bottom: 6px;
+        display: block;
+        color: #323232;
+    }
+    .batch-form-input, .batch-form-select {
+        width: 100%;
+        padding: 11px 15px;
+        font-size: 1.07em;
+        border-radius: 9px;
+        border: 1.2px solid #cccccc;
+        background: #fafbfc;
+        outline: none;
+        transition: border 0.16s;
+    }
+    .batch-form-input:focus, .batch-form-select:focus {
+        border-color: #2b7aeb;
+        background: #fff;
+    }
+    .batch-form-btns {
+        margin-top: 24px;
+        display: flex;
+        gap: 18px;
+        align-items: center;
+    }
+    .batch-btn-main {
+        background: linear-gradient(90deg, #181818 40%, #2b7aeb 100%);
+        color: #fff;
+        font-weight: 600;
+        font-size: 1.09em;
+        border: none;
+        border-radius: 9px;
+        padding: 12px 32px;
+        box-shadow: 0 2px 8px #0001;
+        cursor: pointer;
+        transition: background 0.2s, transform 0.13s;
+    }
+    .batch-btn-main:hover {
+        background: linear-gradient(90deg, #252525 40%, #84b7f7 100%);
+        color: #ffd700;
+        transform: translateY(-1.5px) scale(1.03);
+    }
+    .batch-btn-cancel {
+        color: #2b7aeb;
+        background: none;
+        font-size: 1.08em;
+        text-decoration: underline;
+        border: none;
+        padding: 8px 0;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: color 0.16s;
+    }
+    .batch-btn-cancel:hover {
+        color: #ea4d4d;
+        text-decoration: underline;
+    }
+    .add-row-btn {
+        background: linear-gradient(90deg, #34be67 50%, #1976d2 100%);
+        color: #fff;
+        border: none;
+        border-radius: 8px;
+        padding: 9px 22px;
+        font-weight: 600;
+        font-size: 1em;
+        cursor: pointer;
+        margin-top: 8px;
+        margin-bottom: 18px;
+        transition: background .15s, color .13s, transform .13s;
+        box-shadow: 0 2px 8px #1976d240;
+    }
+    .add-row-btn:hover {
+        background: linear-gradient(90deg, #23a24c 40%, #33c7e2 100%);
+        color: #ffd700;
+        transform: scale(1.03);
+    }
+</style>
+
+<div class="batch-form-container">
+    <div class="batch-form-title">
+        {% if batch %}Редактировать партию{% else %}Создать партию{% endif %}
+    </div>
+    <form method="post" autocomplete="off">
+        {% csrf_token %}
+        <div class="batch-form-group">
+            <label class="batch-form-label" for="{{ form.arrival_date.id_for_label }}">Дата поступления:</label>
+            {{ form.arrival_date }}
+            {% for error in form.arrival_date.errors %}
+                <div style="color:#f64949; font-size:0.97em;">{{ error }}</div>
+            {% endfor %}
+        </div>
+        <div class="batch-form-group">
+            <label class="batch-form-label" for="{{ form.status.id_for_label }}">Статус:</label>
+            {{ form.status }}
+            {% for error in form.status.errors %}
+                <div style="color:#f64949; font-size:0.97em;">{{ error }}</div>
+            {% endfor %}
+        </div>
+        <div class="batch-form-group">
+            <label class="batch-form-label" for="{{ form.storage_location.id_for_label }}">Место хранения (склад):</label>
+            {{ form.storage_location }}
+            {% for error in form.storage_location.errors %}
+                <div style="color:#f64949; font-size:0.97em;">{{ error }}</div>
+            {% endfor %}
+        </div>
+        <div class="batch-form-group">
+            <label class="batch-form-label" for="{{ form.destination.id_for_label }}">Пункт назначения:</label>
+            {{ form.destination }}
+            {% for error in form.destination.errors %}
+                <div style="color:#f64949; font-size:0.97em;">{{ error }}</div>
+            {% endfor %}
+        </div>
+
+        <h3 style="margin:28px 0 8px 0; color:#1976d2; font-size:1.15em;">Ковры в партии</h3>
+        <div id="batch-items-list">
+            {{ formset.management_form }}
+            {% for form in formset.forms %}
+                <div class="batch-form-group batch-row" style="display:flex; gap:16px; align-items:center;">
+                    {{ form.carpet }} {{ form.quantity }}
+                    {% if form.instance.pk %}
+                        <label style="margin-left:10px;">{{ form.DELETE }} <span style="font-size:0.97em;">Удалить</span></label>
+                    {% endif %}
+                </div>
+            {% endfor %}
+        </div>
+        <button type="button" class="add-row-btn" id="add-row-btn">+ Добавить ещё ковер</button>
+        <div class="batch-form-btns">
+            <button type="submit" class="batch-btn-main">Сохранить</button>
+            <a href="{% url 'batch_list' %}" class="batch-btn-cancel">Отмена</a>
+        </div>
+    </form>
+</div>
+
+<script>
+// Динамическое добавление новой строки formset'а
+document.addEventListener('DOMContentLoaded', function() {
+    const addRowBtn = document.getElementById('add-row-btn');
+    const batchItemsList = document.getElementById('batch-items-list');
+    const totalForms = document.querySelector('[name$="-TOTAL_FORMS"]');
+    if (!addRowBtn) return;
+
+    addRowBtn.addEventListener('click', function() {
+        let formNum = parseInt(totalForms.value);
+        // Найдём первый шаблон
+        let emptyRow = document.querySelector('.batch-row');
+        if (!emptyRow) return;
+        let newRow = emptyRow.cloneNode(true);
+        // Очистим значения
+        newRow.querySelectorAll('input, select').forEach(input => {
+            if (input.type === 'checkbox' || input.type === 'radio') {
+                input.checked = false;
+            } else {
+                input.value = '';
+            }
+            // Обновим имена и id для новых форм
+            if (input.name) input.name = input.name.replace(/\d+/, formNum);
+            if (input.id) input.id = input.id.replace(/\d+/, formNum);
+        });
+        // Скрыть кнопку удаления для новой строки
+        let deleteLabel = newRow.querySelector('label');
+        if (deleteLabel) deleteLabel.style.display = "none";
+        // Добавить в DOM
+        batchItemsList.appendChild(newRow);
+        totalForms.value = formNum + 1;
+    });
+});
+</script>
+{% endblock %}

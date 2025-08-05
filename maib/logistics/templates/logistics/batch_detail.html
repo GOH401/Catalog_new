@@ -1,0 +1,232 @@
+{% extends 'base.html' %}
+{% block title %}Партия #{{ batch.id }}{% endblock %}
+
+{% block content %}
+<style>
+.batch-detail-container {
+    max-width: 750px;
+    margin: 48px auto 0 auto;
+    background: #fff;
+    border-radius: 22px;
+    box-shadow: 0 8px 32px #0002;
+    padding: 36px 40px 34px 40px;
+    border: 1.5px solid #eaeaea;
+    position: relative;
+}
+.batch-detail-title {
+    font-size: 2em;
+    font-weight: 800;
+    margin-bottom: 18px;
+    color: #181818;
+    letter-spacing: .4px;
+    display: flex;
+    align-items: center;
+    gap: 18px;
+}
+.badge-status {
+    display: inline-block;
+    background: linear-gradient(90deg,#e9f6f4 70%,#d1eafd 100%);
+    color: #2079b0;
+    font-weight: 600;
+    font-size: .97em;
+    padding: 6px 20px;
+    border-radius: 18px;
+    margin-left: 18px;
+    border: 1px solid #d4e8fa;
+    box-shadow: 0 2px 8px #2079b016;
+}
+.batch-date {
+    font-size: 1.11em;
+    color: #444;
+    margin-bottom: 22px;
+}
+.export-btn {
+    position: absolute;
+    top: 36px;
+    right: 40px;
+    background: linear-gradient(90deg,#34be67 60%,#78e08f 100%);
+    color: #fff;
+    font-weight: 600;
+    border: none;
+    border-radius: 11px;
+    padding: 11px 26px 11px 34px;
+    font-size: 1.05em;
+    box-shadow: 0 2px 8px #34be6740;
+    text-decoration: none;
+    transition: background .16s, transform .13s, color .1s;
+    z-index: 2;
+    display: inline-block;
+    background-image: url("data:image/svg+xml;utf8,<svg width='22' height='22' fill='white' xmlns='http://www.w3.org/2000/svg'><text x='2' y='17' font-size='17'>📥</text></svg>");
+    background-repeat: no-repeat;
+    background-position: 9px 7px;
+    padding-left: 40px;
+}
+.export-btn:hover {
+    background: linear-gradient(90deg,#1e7345 60%,#44f08f 100%);
+    color: #ffd700;
+    transform: scale(1.045);
+}
+.table-wrapper {
+    margin-top: 28px;
+}
+.batch-detail-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0 9px;
+    margin-bottom: 10px;
+}
+.batch-detail-table th, .batch-detail-table td {
+    padding: 14px 11px;
+    text-align: left;
+    background: #f8fafd;
+    border-radius: 10px;
+    font-size: 1.08em;
+    box-shadow: 0 2px 12px #0001;
+    vertical-align: middle;
+}
+.batch-detail-table th {
+    background: #f2f7fc;
+    color: #1976d2;
+    font-weight: 700;
+    font-size: 1.08em;
+}
+.batch-detail-table td {
+    color: #232346;
+    font-weight: 500;
+}
+.carp-image {
+    height: 42px;
+    width: 40px;
+    object-fit: cover;
+    border-radius: 9px;
+    box-shadow: 0 2px 8px #0001;
+    margin-right: 11px;
+    vertical-align: middle;
+
+.chart-container {
+    max-width: 600px;
+    margin: 38px auto 0 auto;
+    background: #fff;
+    border-radius: 18px;
+    box-shadow: 0 2px 16px #1976d220;
+    padding: 22px 24px;
+}
+@media (max-width: 700px) {
+    .chart-container { padding: 12px 2px; }
+}
+}
+@media (max-width: 800px) {
+    .batch-detail-container { padding: 16px 2px; }
+    .export-btn { position: static; display:block; width:100%; margin:0 0 10px 0;}
+}
+@media (max-width: 550px) {
+    .batch-detail-title { font-size: 1.1em; flex-direction:column; gap:6px;}
+    .batch-detail-table th, .batch-detail-table td { padding: 9px 6px; font-size: .95em;}
+}
+</style>
+
+<div class="batch-detail-container">
+    <a href="{% url 'export_batch_detail_xlsx' batch.pk %}" class="export-btn">Экспорт в Excel</a>
+    <div class="batch-detail-title">
+        Партия #{{ batch.id }}
+        <span class="badge-status">{{ batch.get_status_display }}</span>
+    </div>
+    <div class="batch-date">
+        <b>Дата поступления:</b> {{ batch.arrival_date|date:"d.m.Y" }}
+    </div>
+
+    {# Аналитика: график #}
+    <div class="chart-container">
+        <h3 style="font-size:1.09em; color:#1976d2; margin-bottom:18px;">Распределение ковров в партии</h3>
+        <canvas id="carpetChart" height="120"></canvas>
+    </div>
+
+    <h3 style="margin-bottom:12px; color:#232346; font-size:1.13em; margin-top:30px;">Состав партии:</h3>
+    <div class="table-wrapper">
+        <table class="batch-detail-table">
+            <tr>
+                <th>Ковер</th>
+                <th>Коллекция</th>
+                <th>Код</th>
+                <th>Количество</th>
+            </tr>
+            {% for item in batch.items.all %}
+            <tr>
+                <td>
+                    {% if item.carpet.image %}
+                        <img src="{{ item.carpet.image.url }}" alt="{{ item.carpet.name }}" class="carp-image">
+                    {% endif %}
+                    {{ item.carpet.name }}
+                </td>
+                <td>{{ item.carpet.collection.name }}</td>
+                <td>{{ item.carpet.code }}</td>
+                <td>{{ item.quantity }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="4" style="color:#888; text-align:center; background:#f7f7fa;">Ковры не добавлены.</td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+    <div style="margin-top:30px;">
+        <a href="{% url 'batch_list' %}" style="color: #2079b0; text-decoration: none; font-size: 1.07em;">
+            ← Назад к партиям
+        </a>
+    </div>
+</div>
+
+{# Chart.js подключение #}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    const ctx = document.getElementById('carpetChart').getContext('2d');
+    const labels = {{ chart_labels|safe }};
+    const data = {{ chart_data|safe }};
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Количество ковров',
+                data: data,
+                borderWidth: 2,
+                borderRadius: 7,
+                backgroundColor: [
+                    'rgba(25, 118, 210, 0.27)',
+                    'rgba(52, 190, 103, 0.27)',
+                    'rgba(246, 73, 73, 0.20)',
+                    'rgba(33, 167, 186, 0.20)',
+                    'rgba(132, 183, 247, 0.27)'
+                ],
+                borderColor: [
+                    'rgba(25, 118, 210, 0.8)',
+                    'rgba(52, 190, 103, 0.8)',
+                    'rgba(246, 73, 73, 0.65)',
+                    'rgba(33, 167, 186, 0.65)',
+                    'rgba(132, 183, 247, 0.65)'
+                ]
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { display: false },
+                title: { display: false }
+            },
+            scales: {
+                x: {
+                    grid: { display: false },
+                    ticks: { color: '#1976d2', font: { weight: 'bold' } }
+                },
+                y: {
+                    beginAtZero: true,
+                    ticks: { color: '#232346' },
+                    grid: { color: '#e0e0e0' }
+                }
+            }
+        }
+    });
+});
+</script>
+{% endblock %}

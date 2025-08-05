@@ -1,0 +1,177 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ carpet.name }} — Подробнее{% endblock %}
+
+{% block content %}
+<script src="https://cdn.jsdelivr.net/npm/panzoom@9.4.0/dist/panzoom.min.js"></script>
+
+<style>
+.badge-style {
+    background: #f6f0fc;
+    color: #a12bb6;
+    border: 1px solid #ead5fa;
+}
+.badge-collection {
+    background: #e8f4fb;
+    color: #2079b0;
+    border: 1px solid #b5d5ee;
+}
+.transition-hover {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.transition-hover:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.08);
+}
+</style>
+
+<div class="container py-4">
+  <!-- Навигация -->
+  <div class="mb-3 d-flex flex-wrap gap-2">
+    <a href="{% url 'collection_cards' %}" class="btn btn-outline-primary btn-sm">← В каталог</a>
+    <a href="{% url 'collection_detail' carpet.collection.id %}" class="btn btn-outline-secondary btn-sm">← В коллекцию «{{ carpet.collection.name }}»</a>
+  </div>
+
+  <div class="row g-4 align-items-start">
+    <!-- Изображение -->
+    <div class="col-lg-6 text-center">
+      <div class="bg-black rounded-3 shadow overflow-hidden" style="height: 680px;">
+        {% if carpet.image %}
+          <img src="{{ carpet.image.url }}" alt="{{ carpet.name }}" id="zoom-img"
+               class="w-100 h-100 img-fluid object-fit-contain"
+               style="cursor: grab; user-select: none; touch-action: none;">
+        {% else %}
+          <div class="text-white h-100 d-flex align-items-center justify-content-center">Нет фото</div>
+        {% endif %}
+      </div>
+      <div class="mt-2 small text-muted d-flex align-items-center justify-content-between">
+        <span>Колёсико — зум, тянуть — панорама</span>
+        <button id="reset-zoom-btn" class="btn btn-outline-secondary btn-sm">Сбросить зум</button>
+      </div>
+    </div>
+
+    <!-- Инфо -->
+    <div class="col-lg-6">
+      <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+        <h2 class="h4 mb-0">{{ carpet.name }}</h2>
+        <div class="d-flex gap-2">
+          {% if prev_id %}
+            <a href="{% url 'carpet_detail' prev_id %}" class="btn btn-outline-dark btn-sm">←</a>
+          {% endif %}
+          {% if next_id %}
+            <a href="{% url 'carpet_detail' next_id %}" class="btn btn-outline-dark btn-sm">→</a>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Бейджи -->
+      <div class="mt-3 d-flex flex-wrap gap-2">
+        <span class="badge badge-collection p-2">📁 Коллекция: {{ carpet.collection.name }}</span>
+        {% if carpet.style %}
+        <span class="badge badge-style p-2">🎨 Стиль: {{ carpet.get_style_display|default:carpet.style }}</span>
+        {% endif %}
+      </div>
+
+      <!-- Код и цвет -->
+      <div class="mt-3 fs-6 fw-semibold">
+        <div><b>Код:</b> <mark>{{ carpet.code }}</mark></div>
+        <div><b>Цвет:</b> <mark>{{ carpet.color }}</mark></div>
+      </div>
+
+      <!-- Основные цвета -->
+      {% if carpet.main_colors %}
+      <div class="mt-2">
+        <b>Основные цвета:</b>
+        {% for color in carpet.main_colors %}
+          <span class="d-inline-block rounded-circle border border-white shadow-sm"
+                title="{{ color }}"
+                style="width: 26px; height: 26px; background: {{ color }};"></span>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      <!-- Характеристики -->
+      <div class="mt-4">
+        <h5 class="mb-3">Технические характеристики</h5>
+        <table class="table table-bordered table-sm">
+          <tbody>
+            {% if carpet.loom_width %}<tr><th>Ширина станка:</th><td>{{ carpet.loom_width }}</td></tr>{% endif %}
+            {% if carpet.quality %}<tr><th>Качество:</th><td>{{ carpet.quality }}</td></tr>{% endif %}
+            {% if carpet.pile_height %}<tr><th>Высота ворса:</th><td>{{ carpet.pile_height }}</td></tr>{% endif %}
+            {% if carpet.thread_percent_left or carpet.thread_material_left or carpet.thread_percent_right or carpet.thread_note %}
+            <tr>
+              <th>Состав:</th>
+              <td>
+                {{ carpet.thread_percent_left }} {{ carpet.thread_material_left }}
+                {% if carpet.thread_percent_right %}+ {{ carpet.thread_percent_right }}{% endif %}
+                {{ carpet.thread_note }}
+              </td>
+            </tr>
+            {% endif %}
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Кнопки -->
+      {% if user.is_authenticated %}
+      <div class="mt-4 d-flex gap-3 flex-wrap">
+        <a href="{% url 'carpet_update' carpet.pk %}" class="btn btn-primary">
+          ✏️ Редактировать
+        </a>
+        <a href="{% url 'carpet_delete' carpet.pk %}" class="btn btn-danger">
+          🗑️ Удалить
+        </a>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Похожие ковры -->
+  {% if similar_carpets %}
+  <h5 class="mt-5 mb-3">Похожие ковры</h5>
+  <div class="row row-cols-2 row-cols-sm-3 row-cols-md-4 row-cols-lg-5 g-3">
+    {% for c in similar_carpets %}
+    <div class="col">
+      <a href="{% url 'carpet_detail' c.pk %}" class="text-decoration-none text-dark">
+        <div class="bg-white rounded-3 shadow-sm p-2 h-100 text-center border border-light-subtle transition-hover">
+          {% if c.image %}
+            <img src="{{ c.image.url }}" alt="{{ c.name }}"
+                 class="img-fluid rounded mb-2"
+                 style="height: 110px; object-fit: cover;">
+          {% else %}
+            <div class="bg-light rounded mb-2 d-flex align-items-center justify-content-center"
+                 style="height: 110px; color: #aaa; font-size: .9em;">
+              Нет фото
+            </div>
+          {% endif %}
+          <div class="fw-semibold small">{{ c.name }}</div>
+          <div class="text-muted small">Код: {{ c.code }}</div>
+        </div>
+      </a>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    var zoomImg = document.getElementById('zoom-img');
+    if (zoomImg) {
+        window.panzoomInstance = panzoom(zoomImg, {
+            maxZoom: 8,
+            minZoom: 1,
+            bounds: true,
+            boundsPadding: 0.2,
+        });
+        var resetBtn = document.getElementById('reset-zoom-btn');
+        if (resetBtn) {
+            resetBtn.addEventListener('click', function() {
+                zoomImg.style.transform = 'matrix(1, 0, 0, 1, 0, 0)';
+            });
+        }
+    }
+});
+</script>
+{% endblock %}

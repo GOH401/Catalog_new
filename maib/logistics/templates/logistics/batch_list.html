@@ -1,0 +1,133 @@
+{% extends 'base.html' %}
+{% block title %}Партии ковров{% endblock %}
+
+{% block content %}
+<style>
+    .batch-header {
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        margin-bottom: 16px;
+        gap: 20px 10px;
+        flex-wrap: wrap;
+    }
+    .batch-title {
+        font-size: 2.1em;
+        font-weight: 700;
+        color: #181818;
+        letter-spacing: .6px;
+        margin-bottom: 0;
+    }
+    .add-btn {
+        background: linear-gradient(90deg, #34be67 40%, #1976d2 100%);
+        color: #fff;
+        font-weight: 600;
+        font-size: 1.09em;
+        border: none;
+        border-radius: 10px;
+        padding: 12px 28px;
+        box-shadow: 0 2px 8px #34be6740;
+        cursor: pointer;
+        transition: background 0.18s, transform 0.16s;
+        margin-left: auto;
+        text-decoration: none;
+        display: inline-block;
+    }
+    .add-btn:hover {
+        background: linear-gradient(90deg, #169e56 40%, #23c0e6 100%);
+        color: #ffd700;
+        transform: translateY(-2px) scale(1.03);
+    }
+    .batch-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0 10px;
+        margin-top: 12px;
+    }
+    .batch-table th, .batch-table td {
+        text-align: left;
+        padding: 15px 20px;
+        background: #fff;
+        box-shadow: 0 2px 12px #0001;
+        border-radius: 10px;
+        font-size: 1.07em;
+        vertical-align: middle;
+    }
+    .batch-table th {
+        background: #f7f7fa;
+        color: #232346;
+        font-weight: 700;
+        font-size: 1.05em;
+        letter-spacing: .04em;
+    }
+    .batch-table a {
+        color: #1976d2;
+        font-weight: 600;
+        text-decoration: none;
+        transition: color 0.14s;
+    }
+    .batch-table a:hover {
+        color: #1baf5d;
+        text-decoration: underline;
+    }
+    .delete-btn {
+        background: linear-gradient(90deg,#f64949 40%,#e45682 100%);
+        color: #fff;
+        font-weight: 600;
+        border: none;
+        border-radius: 8px;
+        padding: 7px 16px;
+        cursor: pointer;
+        font-size: 1em;
+        transition: background .16s, color .11s, transform .14s;
+        box-shadow: 0 2px 8px #e4568240;
+    }
+    .delete-btn:hover {
+        background: linear-gradient(90deg, #b00020 40%, #ea4d4d 100%);
+        color: #ffd700;
+        transform: scale(1.04);
+    }
+    @media (max-width: 700px) {
+        .batch-title { font-size: 1.37em; }
+        .batch-table th, .batch-table td { padding: 9px 6px; font-size: .97em;}
+        .add-btn { font-size: 0.97em; padding: 9px 14px; }
+        .delete-btn { padding: 7px 8px; font-size: .93em; }
+    }
+</style>
+
+<div class="batch-header">
+    <h1 class="batch-title">Партии ковров</h1>
+    <div style="display: flex; gap: 12px;">
+        <a href="{% url 'batch_create' %}" class="add-btn">+ Новая партия</a>
+        <a href="{% url 'batch_report' %}" class="add-btn" style="background:linear-gradient(90deg, #1976d2 60%, #34be67 100%);">
+            📥 Сгенерировать отчет
+        </a>
+    </div>
+</div>
+<table class="batch-table">
+    <tr>
+        <th>ID</th>
+        <th>Дата поступления</th>
+        <th>Статус</th>
+        <th style="width:100px;">Действия</th>
+    </tr>
+    {% for batch in batches %}
+    <tr>
+        <td><a href="{% url 'batch_detail' batch.pk %}">{{ batch.id }}</a></td>
+        <td>{{ batch.arrival_date|date:"d.m.Y" }}</td>
+        <td>{{ batch.get_status_display }}</td>
+        <td>
+            <a href="{% url 'batch_detail' batch.pk %}" title="Подробнее">👁️</a>
+            <form method="post" action="{% url 'batch_delete' batch.pk %}" style="display:inline;">
+                {% csrf_token %}
+                <button type="submit" class="delete-btn" title="Удалить" onclick="return confirm('Удалить партию #{{ batch.id }}?')">🗑️</button>
+            </form>
+        </td>
+    </tr>
+    {% empty %}
+    <tr>
+        <td colspan="4" style="text-align:center;color:#999;background: #fafafa;">Партии не найдены.</td>
+    </tr>
+    {% endfor %}
+</table>
+{% endblock %}
