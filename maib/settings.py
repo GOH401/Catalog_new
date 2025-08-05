@@ -25,7 +25,7 @@ SECRET_KEY = 'django-insecure-(5kz$0m7qyj25j$2*d4+ml#vc@$r(1oi_poydg94-bewn*g(j%
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 
-ALLOWED_HOSTS = ['.onrender.com']
+ALLOWED_HOSTS = ['catalognew-production.up.railway.app']
 STATIC_ROOT = BASE_DIR / 'static'
 
 
